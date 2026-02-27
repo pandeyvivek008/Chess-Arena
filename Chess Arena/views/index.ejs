@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>Chess Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     LOADING SCREEN — shows briefly on first load
+     ═══════════════════════════════════════════════════════ -->
+<div id="v-loading">
+  <div class="ld-logo">♟</div>
+  <div class="ld-bar-wrap"><div class="ld-bar"></div></div>
+  <div class="ld-text">CHESS ARENA</div>
+</div>
+
+<!-- ═══════════════════════════ LOBBY ═══════════════════════════ -->
+<div id="v-lobby" class="view">
+  <div class="lobby-scene">
+    <div class="scene-board" aria-hidden="true" id="deco-board"></div>
+  </div>
+  <div class="lobby-panel">
+    <div class="lp-header">
+      <div class="lp-logo">♟</div>
+      <h1 class="lp-title">Chess<em>Arena</em></h1>
+      <p class="lp-tagline">Fast · Fair · Free</p>
+    </div>
+
+    <div class="lp-modes">
+
+      <div class="mode-tile">
+        <div class="mt-icon">⚡</div>
+        <div class="mt-body">
+          <div class="mt-name">Quick Match</div>
+          <div class="mt-desc">Auto-match with a random opponent</div>
+        </div>
+        <button class="mt-btn btn-gold" id="btn-quickmatch">Play Now</button>
+      </div>
+
+      <div class="mode-tile">
+        <div class="mt-icon">🔒</div>
+        <div class="mt-body">
+          <div class="mt-name">Private Room</div>
+          <div class="mt-desc">Create a room, invite a friend</div>
+        </div>
+        <button class="mt-btn btn-outline" id="btn-private">Create</button>
+      </div>
+
+      <div class="mode-tile">
+        <div class="mt-icon">🔗</div>
+        <div class="mt-body">
+          <div class="mt-name">Join Room</div>
+          <div class="mt-desc">Enter an invite link or code</div>
+        </div>
+        <button class="mt-btn btn-outline" id="btn-join-toggle">Join</button>
+      </div>
+
+      <div class="join-box hidden" id="join-box">
+        <input class="join-input" id="join-input" placeholder="Paste room code or link…" maxlength="32" autocomplete="off"/>
+        <button class="btn-gold join-go" id="join-go">→</button>
+      </div>
+
+      <div class="mode-tile">
+        <div class="mt-icon">🤖</div>
+        <div class="mt-body">
+          <div class="mt-name">vs Computer</div>
+          <div class="mt-desc">Offline practice · Choose difficulty</div>
+        </div>
+        <button class="mt-btn btn-subtle" id="btn-ai-toggle">Play</button>
+      </div>
+
+      <!-- Difficulty selector — pick BEFORE starting -->
+      <div class="ai-box hidden" id="ai-box">
+        <div class="diff-row" id="lobby-diff">
+          <button class="dbtn" data-d="easy">🟢 Easy</button>
+          <button class="dbtn active" data-d="medium">🟡 Medium</button>
+          <button class="dbtn" data-d="hard">🔴 Hard</button>
+        </div>
+        <button class="btn-gold ai-go" id="ai-go">Start Game →</button>
+      </div>
+
+    </div>
+
+    <p class="lp-footer">No account needed · Works on mobile · Open source</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SEARCHING ══════════════════════════ -->
+<div id="v-search" class="view">
+  <div class="center-card">
+    <div class="search-orbit">
+      <div class="orbit-ring r1"></div>
+      <div class="orbit-ring r2"></div>
+      <div class="orbit-core">♟</div>
+    </div>
+    <h2 class="cc-title">Finding Opponent…</h2>
+    <p class="cc-sub" id="search-time">0s</p>
+    <button class="btn-ghost cancel-btn" id="btn-cancel-search">Cancel</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ WAITING ═══════════════════════════ -->
+<div id="v-wait" class="view">
+  <div class="center-card">
+    <div class="wait-icon">🔒</div>
+    <h2 class="cc-title">Private Room Created</h2>
+    <p class="cc-sub">Share this link with your opponent:</p>
+    <div class="share-row">
+      <input class="share-input" id="share-input" readonly/>
+      <button class="btn-copy" id="btn-copy">Copy</button>
+    </div>
+    <div class="wait-pulse-row">
+      <div class="wait-dot"></div>
+      <span class="cc-sub">Waiting for opponent to join…</span>
+    </div>
+    <div class="color-badge" id="wait-color">You play as White ♙</div>
+    <button class="btn-ghost cancel-btn" id="btn-cancel-wait">← Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ERROR ═════════════════════════════ -->
+<div id="v-error" class="view">
+  <div class="center-card">
+    <div class="err-icon" id="err-icon">⚠️</div>
+    <h2 class="cc-title" id="err-title">Oops!</h2>
+    <p  class="cc-sub"   id="err-msg">Something went wrong.</p>
+    <button class="btn-gold" id="btn-err-home" style="margin-top:20px">← Back to Menu</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ GAME ══════════════════════════════ -->
+<div id="v-game" class="view">
+  <div class="game-shell">
+
+    <!-- TOP BAR -->
+    <header class="gbar">
+      <button class="gbar-btn" id="gbar-back" aria-label="Back to menu">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <div class="gbar-brand">♟ Chess<em>Arena</em></div>
+      <div class="gbar-right">
+        <button class="gbar-btn" id="gbar-mute" title="Toggle sound">
+          <svg id="ico-snd" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+        </button>
+        <div class="gbar-room" id="gbar-room"></div>
+      </div>
+    </header>
+
+    <!-- GAME BODY -->
+    <div class="game-body">
+
+      <!-- ── BOARD COLUMN ── -->
+      <div class="board-col">
+
+        <!-- Opponent strip -->
+        <div class="player-strip" id="strip-opp">
+          <div class="ps-avatar" id="opp-ava">♟</div>
+          <div class="ps-info">
+            <span class="ps-name"    id="opp-name">Opponent</span>
+            <span class="ps-caption" id="opp-cap"></span>
+          </div>
+          <div class="ps-clock" id="clock-opp">10:00</div>
+        </div>
+
+        <!-- Opponent's captures -->
+        <div class="captured-bar" id="capbar-opp">
+          <span class="cap-label">Captured:</span>
+          <div class="cap-pieces" id="cap-opp"></div>
+          <span class="cap-score" id="cap-score-opp"></span>
+        </div>
+
+        <!-- Board -->
+        <div class="board-frame" id="board-frame">
+          <div class="coord-ranks" id="coord-ranks"></div>
+          <div class="board-stack">
+            <div id="chessboard" class="chessboard"></div>
+            <div class="coord-files" id="coord-files"></div>
+          </div>
+        </div>
+
+        <!-- My captures -->
+        <div class="captured-bar" id="capbar-me">
+          <span class="cap-label">Captured:</span>
+          <div class="cap-pieces" id="cap-me"></div>
+          <span class="cap-score" id="cap-score-me"></span>
+        </div>
+
+        <!-- My strip -->
+        <div class="player-strip" id="strip-me">
+          <div class="ps-avatar" id="my-ava">♙</div>
+          <div class="ps-info">
+            <span class="ps-name"    id="my-name">You</span>
+            <span class="ps-caption" id="my-cap"></span>
+          </div>
+          <div class="ps-clock" id="clock-me">10:00</div>
+        </div>
+
+      </div><!-- end .board-col -->
+
+      <!-- ── INFO COLUMN ── -->
+      <aside class="info-col">
+
+        <!-- Status -->
+        <div class="status-card" id="status-card">
+          <div class="sc-indicator" id="sc-dot"></div>
+          <div class="sc-text"      id="sc-text">…</div>
+        </div>
+
+        <!-- Move history — on mobile shows only recent moves -->
+        <div class="log-panel">
+          <div class="lp-head">
+            <span>Move History</span>
+            <button class="lp-pgn" id="btn-pgn">PGN</button>
+          </div>
+          <div class="log-scroll" id="log-scroll">
+            <div class="log-empty" id="log-empty">No moves yet</div>
+            <table class="log-table"><tbody id="log-tbody"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Captured summary (hidden on mobile via CSS) -->
+        <div class="cap-summary" id="cap-summary">
+          <div class="cs-side">
+            <div class="cs-label">♙ White captured</div>
+            <div class="cs-icons" id="cs-white"></div>
+          </div>
+          <div class="cs-divider"></div>
+          <div class="cs-side">
+            <div class="cs-label">♟ Black captured</div>
+            <div class="cs-icons" id="cs-black"></div>
+          </div>
+        </div>
+
+        <!-- AI difficulty panel (offline only) -->
+        <div class="ai-panel hidden" id="ai-panel">
+          <div class="lp-head"><span>Difficulty</span></div>
+          <div class="diff-row" id="game-diff">
+            <button class="dbtn" data-d="easy">🟢 Easy</button>
+            <button class="dbtn active" data-d="medium">🟡 Medium</button>
+            <button class="dbtn" data-d="hard">🔴 Hard</button>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="act-grid">
+          <button class="act-btn" id="btn-resign">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Resign
+          </button>
+          <button class="act-btn" id="btn-restart">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+            </svg>
+            New Game
+          </button>
+          <button class="act-btn" id="btn-undo" style="display:none">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+            </svg>
+            Undo
+          </button>
+          <button class="act-btn" id="btn-share">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+            Share
+          </button>
+        </div>
+
+      </aside>
+    </div><!-- end .game-body -->
+
+  </div><!-- end .game-shell -->
+</div><!-- end #v-game -->
+
+<!-- ═══════════════════ PROMOTION MODAL ═════════════════════════ -->
+<div class="overlay hidden" id="promo-overlay">
+  <div class="promo-modal">
+    <div class="promo-title">Promote Pawn ♟</div>
+    <div class="promo-sub">Choose a piece</div>
+    <div class="promo-choices" id="promo-choices"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ GAME OVER MODAL ═════════════════════════ -->
+<div class="overlay hidden" id="gameover-overlay">
+  <div class="gameover-modal">
+    <span class="gom-glyph" id="gom-glyph">♟</span>
+    <div class="gom-title"  id="gom-title">Game Over</div>
+    <div class="gom-result" id="gom-result"></div>
+    <div class="gom-btns">
+      <button class="btn-gold"  id="gom-again">Play Again</button>
+      <button class="btn-ghost" id="gom-menu">Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TOAST ═══════════════════════════════════ -->
+<div id="toast" class="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="/js/ai.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/game.js"></script>
+</body>
+</html>
